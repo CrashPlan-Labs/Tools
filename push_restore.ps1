@@ -1,20 +1,20 @@
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
 param(
-    [Parameter (Mandatory=$false,HelpMessage="Enter Username to Run this with")]
-    [string]$user,
-    [Parameter (Mandatory=$false, HelpMessage="Input file, list of Paths to restore. These can be files, directories, path seperators can be / or \. If you want to do a full restore provide the root path for the OS in the input file.")]
-    [string]$inputFile,
+    [Parameter (Mandatory=$true,HelpMessage="Enter Username to Run this with")]
+    [string]$User,
+    [Parameter (Mandatory=$true, HelpMessage="Input file, list of Paths to restore. These can be files, directories, path seperators can be / or \. If you want to do a full restore provide the root path for the OS in the input file.")]
+    [string]$InputFile,
     [Parameter (Mandatory=$false,HelpMessage="Target location that exists on disk for the files to be restored (C:/pushrestore/ is default, and use / instead of \")]
-    [string]$RestorePath,
+    [string]$TargetDirectory,
     [Parameter (Mandatory=$false, HelpMessage="Enter us1, us2, or eu1")]
     [ValidateSet('us1', 'us2', 'eu1', 'other')]
     [string]$CloudLocation,
-    [Parameter (Mandatory=$false,HelpMessage="Source device GUID")]
+    [Parameter (Mandatory=$true,HelpMessage="Source device GUID")]
     [string]$SourceComputerGUID,
-    [Parameter (Mandatory=$false,HelpMessage="Destination Device Guid")]
-    [string]$DestinationComputerGUID
+    [Parameter (Mandatory=$true,HelpMessage="Target Device Guid")]
+    [string]$TargetComputerGuid
 )
+
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 function AssignCloudUrl($CloudLocation){
     $CloudLocation = $CloudLocation.ToLower()
@@ -35,26 +35,19 @@ function AssignCloudUrl($CloudLocation){
 }
 
 # Current Prompt for required info if not provided in command
-if ($Username -eq ""){
-    $Username = Read-Host -Prompt "Enter Username to run this with: "
-}
+
 if ($CloudLocation -eq ""){
     $promptedCloudLocation = Read-Host -Prompt "Please provide the target console. Enter us1, us2, or eu1, or Other to provide a custom server address."
-    $CloudLocation = AssignCloudUrl($promptedCloudLocation)
+    $BaseUrl = AssignCloudUrl($promptedCloudLocation)
 }
-if ($SourceComputerGUID -eq ""){
-    $SourceComputerGUID = Read-Host -Prompt "Enter the source device GUID: "
+else {
+    $BaseUrl = AssignCloudUrl($CloudLocation)
 }
-if ($DestinationComputerGUID -eq ""){
-    $DestinationComputerGUID = Read-Host -Prompt "Enter the destination device GUID: "
-}
-if ($RestorePath -eq "") {
-    $RestorePath = Read-Host -Prompt "What is the target location that exists on disk for the files to be restored (C:/pushrestore/ is default, and use / instead of \)" 
+if ($TargetDirectory -eq "") {
+    $TargetDirectory = Read-Host -Prompt "What is the target location that exists on disk for the files to be restored (C:/pushrestore/ is default, and use / instead of \)" 
 }
 
-$BaseUrl = AssignCloudUrl($CloudLocation)
-
-$userAgent = "PushRestoreScript"
+$UserAgent = "PushRestoreScript"
 $pushRestorePathsAtATime = 10000
 
 <#
@@ -70,10 +63,10 @@ foreach ($restore in $restores) {
 }
 #>
 
-$pass= Read-Host "Enter the password for $user" -AsSecureString
+$pass= Read-Host "Enter the password for $User" -AsSecureString
 
 #Get an authorization token for the rest of the API calls, prompting for the 
-$pair = "$($user):$([Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass)))"
+$pair = "$($User):$([Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass)))"
 $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($pair))
 $basicAuthValue = "Basic $encodedCreds"
 
@@ -93,7 +86,7 @@ $oneTimeCode = Read-Host "Enter your two factor Authentication Code"
 }
 
 $tokenUrl = $BaseUrl + '/api/v3/auth/jwt?useBody=true'
-$token = (Invoke-RestMethod -Uri $tokenUrl -Method Get -Headers $basicAuthHeaders -SessionVariable session -UserAgent $userAgent).data.v3_user_token
+$token = (Invoke-RestMethod -Uri $tokenUrl -Method Get -Headers $basicAuthHeaders -SessionVariable session -UserAgent $UserAgent).data.v3_user_token
 
 if($token){
     write-host "we are Authorized, continuing."
@@ -108,25 +101,25 @@ $headers = @{
 }
 
 $sourceGUIDUri = $BaseUrl + '/api/Computer/' + $SourceComputerGUID + '?idType=guid&active=true&incBackupUsage=true'
-$targetGUIDUri = $BaseUrl + '/api/Computer/' + $DestinationComputerGUID + '?idType=guid&active=true&incBackupUsage=true'
+$targetGUIDUri = $BaseUrl + '/api/Computer/' + $TargetComputerGuid + '?idType=guid&active=true&incBackupUsage=true'
 
-$SourceComputer=Invoke-RestMethod -Method GET -Uri $sourceGUIDUri -Headers $headers -WebSession $session -UserAgent $userAgent
-$targetComputer=Invoke-RestMethod -Method GET -Uri $targetGUIDUri -Headers $headers -WebSession $session -UserAgent $userAgent
+$SourceComputer=Invoke-RestMethod -Method GET -Uri $sourceGUIDUri -Headers $headers -WebSession $session -UserAgent $UserAgent
+$targetComputer=Invoke-RestMethod -Method GET -Uri $targetGUIDUri -Headers $headers -WebSession $session -UserAgent $UserAgent
 $sourceUserUri = $BaseUrl + '/api/user/' + $SourceComputer.data.userUid + '?idType=uid'
 $targetUserUri = $BaseUrl + '/api/user/' + $targetComputer.data.userUid  + '?idType=uid'
 
-if (!($RestorePath)) {
-    $RestorePath = "C:/pushrestore/"
+if (!($TargetDirectory)) {
+    $TargetDirectory = "C:/pushrestore/"
 }
 
-$SourceUser=Invoke-RestMethod -Method GET -Uri $sourceUserUri -Headers $headers -WebSession $session -UserAgent $userAgent
-$targetUser=Invoke-RestMethod -Method GET -Uri $targetUserUri -Headers $headers -WebSession $session -UserAgent $userAgent
+$SourceUser=Invoke-RestMethod -Method GET -Uri $sourceUserUri -Headers $headers -WebSession $session -UserAgent $UserAgent
+$targetUser=Invoke-RestMethod -Method GET -Uri $targetUserUri -Headers $headers -WebSession $session -UserAgent $UserAgent
 
 #$SourceComputer.data.active  $SourceComputer.data.name $SourceComputer.data.lastConnected 
 Write-Host "Source Computer information: Username:" $SourceUser.data.username " Org Name: " $SourceUser.data.orgName " Device Name:" $SourceComputer.data.name " Device last connected: " $SourceComputer.data.lastConnected
 Write-Host "Target Computer information: Username:" $targetUser.data.username " Org Name: " $targetUser.data.orgName " Device Name:" $targetComputer.data.name " Device last connected: " $targetComputer.data.lastConnected
-Write-Host "Restoring files from $inputFilePath"
-Write-Host "Files will go here on the target device: $RestorePath"
+Write-Host "Restoring files or paths listed in $InputFile"
+Write-Host "Files will go here on the target device: $TargetDirectory"
 
 $conformation = Read-Host "If the above information is correct enter Y/y to continue. press any other key to exit."
 
@@ -142,8 +135,8 @@ $DataKeyTokenPostValues = @{
 }
 
 #Define the push restore function
-function pushRestore($inputPaths,$SourceComputerGUID,$DestinationComputerGUID,$RestorePath,$ServerGUID) {
-    Write-Host "$(get-date): Kicking off restore of $($jsonArray.Length) paths."
+function pushRestore($inputPaths,$SourceComputerGUID,$TargetComputerGuid,$TargetDirectory,$ServerGUID) {
+    Write-Host "$(get-date): Kicking off restore of provided paths."
     # Initialize an array to hold the JSON objects
     $jsonArray = @()
 
@@ -166,7 +159,7 @@ function pushRestore($inputPaths,$SourceComputerGUID,$DestinationComputerGUID,$R
         $jsonArray += $pathObject
     }
 
-    $DataKeyToken = ((Invoke-RestMethod -Headers $headers -Uri "$BaseUrl/api/DataKeyToken" -Method Post -Body (ConvertTo-Json $DataKeyTokenPostValues) -ContentType application/json -WebSession $session -UserAgent $userAgent).data.dataKeyToken)
+    $DataKeyToken = ((Invoke-RestMethod -Headers $headers -Uri "$BaseUrl/api/DataKeyToken" -Method Post -Body (ConvertTo-Json $DataKeyTokenPostValues) -ContentType application/json -WebSession $session -UserAgent $UserAgent).data.dataKeyToken)
 
     $WebRestorePostValues = @{
         computerGuid = $SourceComputerGUID
@@ -174,28 +167,28 @@ function pushRestore($inputPaths,$SourceComputerGUID,$DestinationComputerGUID,$R
     }
     $body =  ConvertTo-Json $WebRestorePostValues
 
-    $WebRestoreSessionID = ((Invoke-RestMethod -Headers $headers -Uri "$BaseUrl/api/WebRestoreSession" -Method Post -Body $body -ContentType application/json -WebSession $session -UserAgent $userAgent).data.webRestoreSessionId)
+    $WebRestoreSessionID = ((Invoke-RestMethod -Headers $headers -Uri "$BaseUrl/api/WebRestoreSession" -Method Post -Body $body -ContentType application/json -WebSession $session -UserAgent $UserAgent).data.webRestoreSessionId)
     Write-Host "Retrieved web restore session"
     $PrePushRestoreJobBody = @{
         pushRestoreStrategy = "TARGET_DIRECTORY"
         existingFiles = "RENAME_ORIGINAL"
         filePermissions = "CURRENT"
-        numFiles = $jsonArray.Length
-        numBytes = $jsonArray.Length
+        numFiles = 1
+        numBytes = 1
         webRestoreSessionId = $WebRestoreSessionID
         sourceGuid = $SourceComputerGUID
         targetNodeGuid = $ServerGUID
-        acceptingGuid = $DestinationComputerGUID
-        restorePath = $RestorePath
+        acceptingGuid = $TargetComputerGuid
+        restorePath = $TargetDirectory
         pathSet = $jsonArray
         restoreFullPath = $true
     }
     #Write-Host (ConvertTo-Json $PrePushRestoreJobBody)
     $PushRestoreJobBody = (ConvertTo-Json $PrePushRestoreJobBody)
     #Write-Host = "PushRestore Uri : $PushRestoreServer/api/PushRestoreJob"
-    Invoke-RestMethod -Headers $headers -Uri "$BaseUrl/api/PushRestoreJob" -Method Post -Body $PushRestoreJobBody -ContentType "application/json" -WebSession $session -UserAgent $userAgent
+    Invoke-RestMethod -Headers $headers -Uri "$BaseUrl/api/PushRestoreJob" -Method Post -Body $PushRestoreJobBody -ContentType "application/json" -WebSession $session -UserAgent $UserAgent
     Start-Sleep -Seconds 1
 }
 
 # Read all lines from the input file into the pushRestore array, and call the pushRestore function for each group of paths
-Get-Content -Path $inputFilePath -ReadCount $pushRestorePathsAtATime  | ForEach-Object { pushRestore $_ $SourceComputerGUID $DestinationComputerGUID $RestorePath $ServerGUID}
+Get-Content -Path $InputFile -ReadCount $pushRestorePathsAtATime  | ForEach-Object { pushRestore $_ $SourceComputerGUID $TargetComputerGuid $TargetDirectory $ServerGUID}
