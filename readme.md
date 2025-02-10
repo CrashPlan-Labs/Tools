@@ -5,24 +5,24 @@ This script kicks off a push restore for CrashPlan using the `/api/PushRestoreJo
 Paramaters:  
   
 User  
-    **Mandatory:** True.  
-    A user that has permissions to perform a push restore.  
+- **Mandatory:** True.  
+- A user that has permissions to perform a push restore.  
 Input file:  
-    **Mandatory:**  True.  
-    First create a text file that contains all the paths you wish to restore. If you want to restore a single path (C:/ for example) create a text file with just that path.  
-    These can be files, directories, path seperators can be / or \. If you want to do a full restore provide the root path for the OS in the input file."  
+- **Mandatory:**  True.  
+- First create a text file that contains all the paths you wish to restore. If you want to restore a single path (C:/ for example) create a text file with just that path.  
+- These can be files, directories, path seperators can be / or \. If you want to do a full restore provide the root path for the OS in the input file."  
 TargetDirectory  
-    **Mandatory:** : False  
-    Target location that exists on disk for the files to be restored. This will default to **C:/pushrestore**/** use / instead of \ in this path.  
+- **Mandatory:** : False  
+- Target location that exists on disk for the files to be restored. This will default to **C:/pushrestore/** use / instead of \ in this path.  
 CloudLocation  
-    **Mandatory:**: True.  
-    The Cloud you are restoring from. Options are: us1, us2, or eu1"  
+- **Mandatory:**: True.  
+- The Cloud you are restoring from. Options are: us1, us2, or eu1"  
 SourceComputerGUID  
-    **Mandatory:**: True.  
-    The GUID of the CrashPlan device you are restoring data from.  
+- **Mandatory:**: True.  
+- The GUID of the CrashPlan device you are restoring data from.  
 TargetComputerGuid  
-    **Mandatory:**: True.  
-    The GUID of the CrashPlan device you are pushing the restore to.  
+- **Mandatory:**: True.  
+- The GUID of the CrashPlan device you are pushing the restore to.  
   
 Example restore command:  
   
