@@ -83,7 +83,7 @@ else {
     }
 }
 
-$login_url = $base_url + '/api/v3/auth/jwt?useBody=true'
+$login_url = $BaseUrl + '/api/v3/auth/jwt?useBody=true'
 $token = (Invoke-RestMethod -Uri $login_url -Method Get  -Headers $basicAuthHeaders -ContentType 'application/json').data.v3_user_token
 if($token){
     write-host "we are Authorized, continuing"
