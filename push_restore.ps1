@@ -1,16 +1,16 @@
 param(
-    [Parameter (Mandatory=$true,HelpMessage="Enter Username to Run this with")]
+    [Parameter (Mandatory=$true,HelpMessage="Enter username")]
     [string]$User,
-    [Parameter (Mandatory=$true, HelpMessage="Input file, list of Paths to restore. These can be files, directories, path seperators can be / or \. If you want to do a full restore provide the root path for the OS in the input file.")]
+    [Parameter (Mandatory=$true, HelpMessage="Input file, list of paths to restore. These can be files, directories, path seperators can be / or \. If you want to do a full restore provide the root path for the OS in the input file.")]
     [string]$InputFile,
     [Parameter (Mandatory=$false,HelpMessage="Target location that exists on disk for the files to be restored (C:/pushrestore/ is default, and use / instead of \")]
     [string]$TargetDirectory,
-    [Parameter (Mandatory=$false, HelpMessage="Enter us1, us2, or eu1")]
+    [Parameter (Mandatory=$false, HelpMessage="Enter US1, US2, or EU1")]
     [ValidateSet('us1', 'us2', 'eu1', 'other')]
     [string]$CloudLocation,
     [Parameter (Mandatory=$true,HelpMessage="Source device GUID")]
     [string]$SourceComputerGUID,
-    [Parameter (Mandatory=$true,HelpMessage="Target Device Guid")]
+    [Parameter (Mandatory=$true,HelpMessage="Target device Guid")]
     [string]$TargetComputerGuid
 )
 
@@ -37,14 +37,14 @@ function AssignCloudUrl($CloudLocation){
 # Current Prompt for required info if not provided in command
 
 if ($CloudLocation -eq ""){
-    $promptedCloudLocation = Read-Host -Prompt "Please provide the target console. Enter us1, us2, or eu1, or Other to provide a custom server address."
+    $promptedCloudLocation = Read-Host -Prompt "Please provide the target console. Enter US1, US2, or EU1, or 'Other' to provide a custom server address."
     $BaseUrl = AssignCloudUrl($promptedCloudLocation)
 }
 else {
     $BaseUrl = AssignCloudUrl($CloudLocation)
 }
 if ($TargetDirectory -eq "") {
-    $TargetDirectory = Read-Host -Prompt "What is the target location that exists on disk for the files to be restored (C:/pushrestore/ is default, and use / instead of \)" 
+    $TargetDirectory = Read-Host -Prompt "What is target location on disk for the files to be restored (C:/pushrestore/ is default, and use / instead of \)" 
 }
 
 $UserAgent = "PushRestoreScript"
@@ -70,7 +70,7 @@ $pair = "$($User):$([Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.
 $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($pair))
 $basicAuthValue = "Basic $encodedCreds"
 
-$totp = Read-Host "Do you need to enter a 2 factor Code to continue? Press Y/y to enter one. Press enter to skip."
+$totp = Read-Host "Do you need to enter a 2 factor code to continue? Press Y/y to enter one OR press enter to skip."
 
 if (!($totp -ilike 'y')){
     $basicAuthHeaders = @{
@@ -78,7 +78,7 @@ if (!($totp -ilike 'y')){
     }
 }
 else {
-$oneTimeCode = Read-Host "Enter your two factor Authentication Code"
+$oneTimeCode = Read-Host "Enter your two factor code"
     $basicAuthHeaders = @{
         Authorization = $basicAuthValue
         'totp-auth' = $oneTimeCode
@@ -89,10 +89,10 @@ $tokenUrl = $BaseUrl + '/api/v3/auth/jwt?useBody=true'
 $token = (Invoke-RestMethod -Uri $tokenUrl -Method Get -Headers $basicAuthHeaders -SessionVariable session -UserAgent $UserAgent).data.v3_user_token
 
 if($token){
-    write-host "we are Authorized, continuing."
+    write-host "we are authorized, continuing."
 }
 else{
-    Write-Host "Invalid username,password, or one time code. Exiting please try again."
+    Write-Host "Invalid username, password, or one time code. Exiting please try again."
     exit
 }
 
