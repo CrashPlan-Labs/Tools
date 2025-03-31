@@ -1,6 +1,6 @@
 #Get an authorization token for the rest of the API calls, prompting for a two factor code as needed. Works with powershell 5.1 and Powershell core
 param (
-    [Parameter (Mandatory=$true,HelpMessage="Enter Username to Run this with")]
+    [Parameter (Mandatory=$true,HelpMessage="Enter username:")]
     [string]$api_client,
     [Parameter (Mandatory=$true,HelpMessage="Enter the base url to run the script with")]
     [string]$base_url
