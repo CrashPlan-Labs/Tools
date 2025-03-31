@@ -63,36 +63,33 @@ foreach ($restore in $restores) {
 }
 #>
 
-$pass= Read-Host "Enter the password for $User" -AsSecureString
+$credentials = Get-Credential -Credential $User
 
-#Get an authorization token for the rest of the API calls, prompting for the 
-$pair = "$($User):$([Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass)))"
+#Get an authorization token for the rest of the API calls, prompting for a two factor code as needed. Works with powershell 5.1 and Powershell core
+$pair = "$($credentials.username):$($credentials.GetNetworkCredential().Password)"
 $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($pair))
 $basicAuthValue = "Basic $encodedCreds"
 
-$totp = Read-Host "Do you need to enter a 2 factor Code to continue? Press Y/y to enter one. Press enter to skip."
-
-if (!($totp -ilike 'y')){
+$totp = Read-Host "Enter your 2 factor code. Press enter to skip if not required"
+if ([string]::IsNullOrEmpty($totp)){
     $basicAuthHeaders = @{
         Authorization = $basicAuthValue
     }
 }
 else {
-$oneTimeCode = Read-Host "Enter your two factor Authentication Code"
     $basicAuthHeaders = @{
         Authorization = $basicAuthValue
-        'totp-auth' = $oneTimeCode
+        'totp-auth' = $totp
     }
 }
 
-$tokenUrl = $BaseUrl + '/api/v3/auth/jwt?useBody=true'
-$token = (Invoke-RestMethod -Uri $tokenUrl -Method Get -Headers $basicAuthHeaders -SessionVariable session -UserAgent $UserAgent).data.v3_user_token
-
+$login_url = $BaseUrl + '/api/v3/auth/jwt?useBody=true'
+$token = (Invoke-RestMethod -Uri $login_url -Method Get  -Headers $basicAuthHeaders -ContentType 'application/json').data.v3_user_token
 if($token){
-    write-host "we are Authorized, continuing."
+    write-host "we are Authorized, continuing"
 }
 else{
-    Write-Host "Invalid username,password, or one time code. Exiting please try again."
+    Write-Host "Invalid username, password, one time code, or base url. Exiting please try again."
     exit
 }
 

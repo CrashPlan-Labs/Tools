@@ -1,37 +1,19 @@
-PushRestore.ps1  
-License: MIT  
-This script kicks off a push restore for CrashPlan using the `/api/PushRestoreJob` method. First it makes a call to set up a web restore session, and then performs the push restore. Before starting the restore it will prompt for comformation with information on both the source and target devices.  
-  
-Paramaters:  
-  
-User  
-- **Mandatory:** True.  
-- A user that has permissions to perform a push restore.  
+### CrashPlan Labs Tools
 
-InputFile:  
-- **Mandatory:**  True.  
-- First create a text file that contains all the paths you wish to restore. If you want to restore a single path (C:/ for example) create a text file with just that path.  
-- These can be files, directories, path seperators can be / or \. If you want to do a full restore provide the root path for the OS in the input file."  
+Tools is a repo for all sorts of resources that can make working with CrashPlan easier. Much of the items in this repo will be related to the API, but it's a more general place for useful pieces of tooling.
 
-TargetDirectory  
-- **Mandatory:** : False  
-- Target location that exists on disk for the files to be restored. This will default to **C:/pushrestore/** use / instead of \ in this path.  
+PushRestore.ps1
+- Script to automate kicking off a push restore. See the specific push_restore readme for more information.
 
-CloudLocation  
-- **Mandatory:**: True.  
-- The Cloud you are restoring from. Options are: us1, us2, or eu1"  
+customize_email_templates.ps1
+- Script to help manage custom email templates, and setting up new ones.
+- Email Customization is documented in depth on this page.
+- https://support.crashplan.com/hc/en-us/articles/9057161536781--Customize-email-templates
 
-SourceComputerGUID  
-- **Mandatory:**: True.  
-- The GUID of the CrashPlan device you are restoring data from.  
+Exclusions
+exclusions.txt is a list of our recommended exclusions.
 
-TargetComputerGuid  
-- **Mandatory:**: True.  
-- The GUID of the CrashPlan device you are pushing the restore to.  
-  
-Example restore command:  
-  
-pushrestore.ps1 -User restorePusher@example.com -inputFile .\pathsToRestore.txt -TargetDirectory "C:/RestoreTarget/" -CloudLocation us2 -SourceComputerGUID 424242424242424242 -TargetComputerGuid 3141592653589793238  
-
-
-
+API Authenticaion 
+- Collection of scripts to help when using the API. Covers authentication and generating a bearer token for both basic auth users, that need a 2fa code and CrashPlan API clients. 
+- Powershell scripts support both powershell core and 5.1
+- Shell Scripts work on macOS and linux, and with shell and zsh.
