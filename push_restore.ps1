@@ -1,13 +1,12 @@
 param(
     [Parameter (Mandatory=$true,HelpMessage="Enter Username to Run this with")]
     [string]$User,
-    [Parameter (Mandatory=$true, HelpMessage="Input file, list of Paths to restore. These can be files, directories, path seperators can be / or \. If you want to do a full restore provide the root path for the OS in the input file.")]
+    [Parameter (Mandatory=$false, HelpMessage="Input file, list of Paths to restore. These can be files, directories, path seperators can be / or \. If you want to do a full restore for a system this will assume C:/ for windows and / for macOS and linux")]
     [string]$InputFile,
-    [Parameter (Mandatory=$false,HelpMessage="Target location that exists on disk for the files to be restored (C:/pushrestore/ is default, and use / instead of \")]
+    [Parameter (Mandatory=$false,HelpMessage="Target location that exists on disk for the files to be restored (C:/pushrestore/ is default if target is Windows, /pushrestore/ if macOS/linux, and use / instead of \")]
     [string]$TargetDirectory,
-    [Parameter (Mandatory=$false, HelpMessage="Enter us1, us2, or eu1")]
-    [ValidateSet('us1', 'us2', 'eu1', 'other')]
-    [string]$CloudLocation,
+    [Parameter (Mandatory=$true,HelpMessage="Enter the base url to run the script with")]
+    [string]$BaseUrl,
     [Parameter (Mandatory=$true,HelpMessage="Source device GUID")]
     [string]$SourceComputerGUID,
     [Parameter (Mandatory=$true,HelpMessage="Target Device Guid")]
@@ -16,35 +15,11 @@ param(
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-function AssignCloudUrl($CloudLocation){
-    $CloudLocation = $CloudLocation.ToLower()
-    switch($CloudLocation){
-        "us2"{
-            return "https://console.us2.crashplan.com"
-        }
-        "us1"{
-            return "https://console.us1.crashplan.com"
-        }
-        "eu1"{
-            return "https://console.cpg.eu5.crashplan.com"
-        }
-        "other" {
-            return Read-Host -Prompt "Please input the console URL (e.g. https://console.us.crashplan.com)"
-        }
-    }
-}
-
-# Current Prompt for required info if not provided in command
-
-if ($CloudLocation -eq ""){
-    $promptedCloudLocation = Read-Host -Prompt "Please provide the target console. Enter us1, us2, or eu1, or Other to provide a custom server address."
-    $BaseUrl = AssignCloudUrl($promptedCloudLocation)
-}
-else {
-    $BaseUrl = AssignCloudUrl($CloudLocation)
+if ($BaseUrl -eq ""){
+    $BaseUrl = Read-Host -Prompt "Please provide the base url for API requests, ie: https://console.us2.crashplan.com"
 }
 if ($TargetDirectory -eq "") {
-    $TargetDirectory = Read-Host -Prompt "What is the target location that exists on disk for the files to be restored (C:/pushrestore/ is default, and use / instead of \)" 
+    $TargetDirectory = Read-Host -Prompt "What is the target location that exists on disk for the files to be restored (C:/pushrestore/ComputerName/ or /pushrestore/ComputerName/ is default, and use / instead of \)" 
 }
 
 $UserAgent = "PushRestoreScript"
@@ -102,19 +77,34 @@ $targetGUIDUri = $BaseUrl + '/api/Computer/' + $TargetComputerGuid + '?idType=gu
 
 $SourceComputer=Invoke-RestMethod -Method GET -Uri $sourceGUIDUri -Headers $headers -WebSession $session -UserAgent $UserAgent
 $targetComputer=Invoke-RestMethod -Method GET -Uri $targetGUIDUri -Headers $headers -WebSession $session -UserAgent $UserAgent
-$sourceUserUri = $BaseUrl + '/api/user/' + $SourceComputer.data.userUid + '?idType=uid'
 $targetUserUri = $BaseUrl + '/api/user/' + $targetComputer.data.userUid  + '?idType=uid'
 
+$sourceUserUri = $BaseUrl + '/api/user/' + $SourceComputer.data.userUid + '?idType=uid'
+$SourceComputerOs = $SourceComputer.data.osName
+$targetComputerOs = $targetComputer.data.osName
+$TargetComputerName = $targetComputer.data.name
+$SourceComputerName = $SourceComputer.data.name
+if ($SourceComputerOs -like "*win*") {
+    $defaultPath = "C:/"
+}
+else{
+    $defaultPath = "/"
+}
 if (!($TargetDirectory)) {
-    $TargetDirectory = "C:/pushrestore/"
+    if($targetComputerOs -like "*win*") {
+            $TargetDirectory = "C:/pushrestore/$SourceComputerName/"
+        }
+    else {
+        $TargetDirectory = "/pushrestore/$SourceComputerName/"
+    }
 }
 
 $SourceUser=Invoke-RestMethod -Method GET -Uri $sourceUserUri -Headers $headers -WebSession $session -UserAgent $UserAgent
 $targetUser=Invoke-RestMethod -Method GET -Uri $targetUserUri -Headers $headers -WebSession $session -UserAgent $UserAgent
 
 #$SourceComputer.data.active  $SourceComputer.data.name $SourceComputer.data.lastConnected 
-Write-Host "Source Computer information: Username:" $SourceUser.data.username " Org Name: " $SourceUser.data.orgName " Device Name:" $SourceComputer.data.name " Device last connected: " $SourceComputer.data.lastConnected
-Write-Host "Target Computer information: Username:" $targetUser.data.username " Org Name: " $targetUser.data.orgName " Device Name:" $targetComputer.data.name " Device last connected: " $targetComputer.data.lastConnected
+Write-Host "Source Computer information: Username:" $SourceUser.data.username " Org Name: " $SourceUser.data.orgName " Device Name:" $SourceComputerName " Device last connected: " $SourceComputer.data.lastConnected
+Write-Host "Target Computer information: Username:" $targetUser.data.username " Org Name: " $targetUser.data.orgName " Device Name:" $TargetComputerName " Device last connected: " $targetComputer.data.lastConnected
 Write-Host "Restoring files or paths listed in $InputFile"
 Write-Host "Files will go here on the target device: $TargetDirectory"
 
@@ -187,5 +177,13 @@ function pushRestore($inputPaths,$SourceComputerGUID,$TargetComputerGuid,$Target
     Start-Sleep -Seconds 1
 }
 
-# Read all lines from the input file into the pushRestore array, and call the pushRestore function for each group of paths
-Get-Content -Path $InputFile -ReadCount $pushRestorePathsAtATime  | ForEach-Object { pushRestore $_ $SourceComputerGUID $TargetComputerGuid $TargetDirectory $ServerGUID}
+# Read all lines from the input file into the pushRestore array, and call the pushRestore function for each group of paths if the input file does not exist dynamically choose the path based on if it's a windows or macOS system. Assuming windows by default.
+
+if (Test-Path -Path $InputFile) {
+    Get-Content -Path $InputFile -ReadCount $pushRestorePathsAtATime  | ForEach-Object { pushRestore $_ $SourceComputerGUID $TargetComputerGuid $TargetDirectory $ServerGUID}
+}
+else {
+    Write-Host "Input file $InputFile does not exist, restoring the full drive for $SourceComputerGUID."
+    pushRestore $defaultPath $SourceComputerGUID $TargetComputerGuid $TargetDirectory $ServerGUID
+    exit
+}
