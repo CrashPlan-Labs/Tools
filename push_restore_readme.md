@@ -30,9 +30,11 @@ TargetComputerGuid
 - **Mandatory:**: True.  
 - The GUID of the CrashPlan device you are pushing the restore to.  
   
-Example restore command:  
+Example restore commands:  
   
 pushrestore.ps1 -User restorePusher@example.com -inputFile .\pathsToRestore.txt -TargetDirectory "C:/RestoreTarget/" -Baseurl https://console.us2.crashplan.com -SourceComputerGUID 424242424242424242 -TargetComputerGuid 3141592653589793238  
+
+pushrestore.ps1 -User restorePusher@example.com -Baseurl https://console.us2.crashplan.com -SourceComputerGUID 424242424242424242 -TargetComputerGuid 3141592653589793238  
 
 
 
