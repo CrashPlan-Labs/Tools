@@ -1,5 +1,5 @@
 param(
-    [Parameter(Mandatory=$true, HelpMessage="Enter Username to Run this with")]
+    [Parameter(Mandatory=$true, HelpMessage="Enter the username with push restore permission to run this with")]
     [string]$User,
     [Parameter(Mandatory=$false, HelpMessage="Input file, list of paths to restore. These can be files, directories, path separators can be / or \. If you want to do a full restore for a system this will assume C:/ for Windows and / for macOS and Linux")]
     [string]$InputFile,
