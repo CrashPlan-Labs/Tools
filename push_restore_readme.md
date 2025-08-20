@@ -16,13 +16,13 @@ InputFile:
 
 TargetDirectory  
 - **Mandatory:** : False  
-- Target location that exists on disk for the files to be restored. This will default to **C:/pushrestore/ComputerName**, or **/pushrestore/ComputerName/** depending on the Operating system of the target endpoint.  Use / instead of \ in this path.  
+- Target location that exists on disk for the files to be restored. This will default to **C:/pushrestore/SourceComputerGuid**, or **/pushrestore/SourceComputerGuid/** depending on the Operating system of the target endpoint.  Use / instead of \ in this path.  
 
 BaseUrl  
 - **Mandatory:**: True.  
 - The Cloud you are restoring from, Use the full server address.
 
-SourceComputerGUID  
+SourceComputerGuid  
 - **Mandatory:**: True.  
 - The GUID of the CrashPlan device you are restoring data from.  
 
@@ -32,9 +32,9 @@ TargetComputerGuid
   
 Example restore commands:  
   
-pushrestore.ps1 -User restorePusher@example.com -inputFile .\pathsToRestore.txt -TargetDirectory "C:/RestoreTarget/" -Baseurl https://console.us2.crashplan.com -SourceComputerGUID 424242424242424242 -TargetComputerGuid 3141592653589793238  
+pushrestore.ps1 -User restorePusher@example.com -inputFile .\pathsToRestore.txt -TargetDirectory "C:/RestoreTarget/" -Baseurl https://console.us2.crashplan.com -SourceComputerGuid 424242424242424242 -TargetComputerGuid 3141592653589793238  
 
-pushrestore.ps1 -User restorePusher@example.com -Baseurl https://console.us2.crashplan.com -SourceComputerGUID 424242424242424242 -TargetComputerGuid 3141592653589793238  
+pushrestore.ps1 -User restorePusher@example.com -Baseurl https://console.us2.crashplan.com -SourceComputerGuid 424242424242424242 -TargetComputerGuid 3141592653589793238  
 
 
 
