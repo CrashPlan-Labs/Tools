@@ -45,11 +45,12 @@ if ([string]::IsNullOrEmpty($totp)) {
 }
 
 $login_url = $BaseUrl + '/api/v3/auth/jwt?useBody=true'
-$token = (Invoke-RestMethod -Uri $login_url -Method Get -Headers $basicAuthHeaders -ContentType 'application/json' -SessionVariable session).data.v3_user_token
-if ($token) {
-    Write-Host "We are authorized, continuing"
-} else {
-    Write-Host "Invalid username, password, one-time code, or base URL. Exiting, please try again."
+$token = (Invoke-RestMethod -Uri $login_url -Method Get  -Headers $basicAuthHeaders -ContentType 'application/json' -SessionVariable session -UserAgent $userAgent).data.v3_user_token
+if($token){
+    write-host "we are Authorized, continuing"
+}
+else {
+    Write-Host "Invalid username, password, one time code, or base url. Exiting please try again."
     exit
 }
 

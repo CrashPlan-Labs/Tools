@@ -1,7 +1,7 @@
 param (
-    [Parameter (Mandatory=$true,HelpMessage="Enter Username to Run this with")]
+    [Parameter (Mandatory=$true,HelpMessage="Enter Username")]
     [string]$user,
-    [Parameter (Mandatory=$true,HelpMessage="Enter the base url to run the script with")]
+    [Parameter (Mandatory=$true,HelpMessage="Enter base url")]
     [string]$base_url
 )
 $userAgent = "CustomizeEmail"
@@ -16,7 +16,7 @@ $pair = "$($credentials.username):$($credentials.GetNetworkCredential().Password
 $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($pair))
 $basicAuthValue = "Basic $encodedCreds"
 
-$totp = Read-Host "Enter your 2 factor code. Press enter to skip if not required"
+$totp = Read-Host "Enter your 2 factor code. Press enter to skip."
 if ([string]::IsNullOrEmpty($totp)){
     $basicAuthHeaders = @{
         Authorization = $basicAuthValue
@@ -33,10 +33,10 @@ $login_url = $base_url + '/api/v3/auth/jwt?useBody=true'
 
 $token = (Invoke-RestMethod -Uri $login_url -Method Get  -Headers $basicAuthHeaders -ContentType 'application/json' -UserAgent $userAgent).data.v3_user_token
 if($token){
-    write-host "we are Authorized, continuing"
+    write-host "We are authorized, continuing"
 }
 else{
-    Write-Host "Invalid username, password, one time code, or base url. Exiting please try again."
+    Write-Host "Invalid username, password, 2 factor code, or base url. Exiting please try again."
     exit
 }
 
@@ -54,7 +54,7 @@ Write-Host "Created file with the current email text settings $currentEmailTextC
 Out-File -InputObject $customizationsJson -FilePath $currentEmailTextCustomizationsFile -Encoding ascii
 
 #creating a file that can be used to update the content
-$conformationModify = Read-Host "Do you want to create a file to modify for updating email text? enter Y/y to continue. press any other key to skip"
+$conformationModify = Read-Host "Do you want to create a file to modify updated email text? Enter Y/y to continue or press any key to skip."
 
 if (($conformationModify -ilike 'y')){
 
@@ -65,23 +65,23 @@ if (($conformationModify -ilike 'y')){
     $updateAll = $updateAll -replace '\s*{\s*"category":\s*"GLOBAL",\s*"segment":\s*"SENDER_EMAIL",\s*"content":\s*"noreply@crashplan.com"\s*},\s',''
 
     $updateFinal= '{"emailTextCustomizations": '+$updateAll+'}'
-    Write-Host "Created updateAll.json, update the 'content' lines with the new custom content, and remove any sections you don't want to update."
+    Write-Host "Created updateAll.json, update the 'content' lines with the new custom content and remove any sections you don't want to update."
     Out-File -InputObject $updateFinal -FilePath "updateAll.json" -Encoding ascii
-    Write-Host "`nModify the updateAll.json file to only inclide the category,segment, and content for the emails you want to customize and then save the file as $customizedTemplatesFile. If modification of $customizedTemplatesFile takes longer than 15 minutes you may need to run the script to upload the changes."
+    Write-Host "`nModify the updateAll.json file to only include the category, segment, and content for the emails you want to customize and then save the file as $customizedTemplatesFile. If modification of $customizedTemplatesFile takes longer than 15 minutes you may need to run the script to upload the changes."
 }
 
 #updating the data, will exit if the custom file has not been created
-$conformationUpdate = Read-Host "Do you want to update the email text? enter Y/y to continue, and have you created $customizedTemplatesFile? Press any other key to skip"
+$conformationUpdate = Read-Host "Do you want to update the email text? Enter Y/y to continue. Have you created $customizedTemplatesFile? Press any key to skip"
 if (($conformationUpdate -ilike 'y') -and (Test-Path $customizedTemplatesFile -PathType Leaf) ){
     $uploadPath=$customizedTemplatesFile
     Invoke-RestMethod -Headers $headers -Uri "$base_url/api/v4/email-text-customization/update" -Method POST -InFile $uploadPath -ContentType "application/json" -UserAgent $userAgent
 }
-$conformationLogo = Read-Host "Do you want to modify the logo of the emails and have you created a custom header image? Enter Y/y to continue. Press any other key to skip"
+$conformationLogo = Read-Host "Do you want to modify the logo of the emails and have you created a custom header image? Enter Y/y to continue or press any key to skip."
 if (($conformationLogo -ilike 'y')){
     #This section will let you update the header logo on the emails.
-    $headerLogo = Read-Host "Please enter the full path to the new logo"
+    $headerLogo = Read-Host "Please enter the full path to the new logo."
     $form = @{logo=get-item $headerLogo}
     Invoke-RestMethod -Headers $headers -Uri "$base_url/api/v3/EmailLogoCustomization" -Method POST -body $form -ContentType "multipart/form-data" -UserAgent $userAgent
 }
 
-Write-Host "`nTo test your new emails in the console CLI run 'test.email <email address>' to recieve example emails with the customizations."
+Write-Host "`nTo test your new emails in the console CLI run 'test.email <email address>' to recieve example emails with customizations."
