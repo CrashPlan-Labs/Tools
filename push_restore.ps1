@@ -185,7 +185,7 @@ function pushRestore($inputPaths, $SourceComputerGuid, $TargetComputerGuid, $Tar
         pathSet = $jsonArray
         restoreFullPath = $true
         timestamp = $EpochRestoreDate
-        showDeletedFiles = $false
+        showDeletedFiles = $showDeletedFiles
     }
 
     $PushRestoreJobBody = ConvertTo-Json $PrePushRestoreJobBody
