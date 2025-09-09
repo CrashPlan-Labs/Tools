@@ -1,16 +1,20 @@
 param(
     [Parameter(Mandatory=$true, HelpMessage="Enter the username with push restore permission to run this with")]
     [string]$User,
-    [Parameter(Mandatory=$false, HelpMessage="Input file, list of paths to restore. These can be files, directories, path separators can be / or \. If you want to do a full restore for a system this will assume C:/ for Windows and / for macOS and Linux")]
-    [string]$InputFile,
-    [Parameter(Mandatory=$false, HelpMessage="Target location that exists on disk for the files to be restored (C:/pushrestore/SourceComputerGuid is default if target is Windows, /pushrestore/SourceComputerGuid if macOS/Linux, and use / instead of \)")]
-    [string]$TargetDirectory,
     [Parameter(Mandatory=$true, HelpMessage="Enter the base URL to run the script with")]
     [string]$BaseUrl,
     [Parameter(Mandatory=$true, HelpMessage="Source device GUID")]
     [string]$SourceComputerGuid,
     [Parameter(Mandatory=$true, HelpMessage="Target device GUID")]
-    [string]$TargetComputerGuid
+    [string]$TargetComputerGuid,
+    [Parameter(Mandatory=$false, HelpMessage="Input file, list of paths to restore. These can be files, directories, path separators can be / or \. If you want to do a full restore for a system this will assume C:/ for Windows and / for macOS and Linux")]
+    [string]$InputFile,
+    [Parameter(Mandatory=$false, HelpMessage="Target location that exists on disk for the files to be restored (C:/pushrestore/SourceComputerGuid is default if target is Windows, /pushrestore/SourceComputerGuid if macOS/Linux, and use / instead of \)")]
+    [string]$TargetDirectory,
+    [Parameter(Mandatory=$false, HelpMessage="Date in a yyyy-mm-dd format to restore from, if not provided the latest version will be restored")]
+    [string]$RestoreDate,
+    [Parameter(Mandatory=$false, HelpMessage="Add paramater to restore deleted files, false by default")]
+    [switch]$RestoreDeletedFiles
 )
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -21,7 +25,7 @@ if ($BaseUrl -eq "") {
 if ($TargetDirectory -eq "") {
     $TargetDirectory = Read-Host -Prompt "What is the target location that exists on disk for the files to be restored? If nothing is passed in C:/pushrestore/$SourceComputerGuid/ or /pushrestore/$SourceComputerGuid/ will be used. (use / instead of \)"
 }
-
+Write-Host "RestoreDeletedFiles is set to $RestoreDeletedFiles"
 $UserAgent = "PushRestoreScript"
 $pushRestorePathsAtATime = 10000
 
@@ -85,6 +89,26 @@ if (!($TargetDirectory)) {
     }
 }
 
+if (!($RestoreDate)) {
+    $RestoreDate = (Get-Date).ToString("yyyy-MM-dd")
+} else{
+    $isValidDate = [DateTime]::TryParseExact($RestoreDate, 'yyyy-MM-dd', $null, [System.Globalization.DateTimeStyles]::None, [ref][datetime]::MinValue)
+    if (-not $isValidDate) {
+        Write-Host "The provided restore date '$RestoreDate' is not in the correct format (yyyy-MM-dd). Exiting."
+        exit
+    }
+}
+#convert the restore date to epoch time
+$EpochRestoreDate=[int64](Get-Date $RestoreDate -UFormat "%s") * 1000
+
+if ($RestoreDeletedFiles -eq $true) {
+    Write-Host "Deleted files will be included in the restore."
+} else {
+    Write-Host "Deleted files will NOT be included in the restore."
+}
+
+Write-Host "Restoring from date:" $RestoreDate
+
 $SourceUser = Invoke-RestMethod -Method GET -Uri $sourceUserUri -Headers $headers -WebSession $session -UserAgent $UserAgent
 $targetUser = Invoke-RestMethod -Method GET -Uri $targetUserUri -Headers $headers -WebSession $session -UserAgent $UserAgent
 
@@ -94,7 +118,7 @@ Write-Host "Target Computer information: Username:" $targetUser.data.username "O
 if ($InputFile) {
     Write-Host "Restoring files or paths listed in $InputFile."
 } else {
-    Write-Host "Restoring $defaultPath for $SourceComputerGuid."
+    Write-Host "Restoring $defaultPath for $SourceComputerGuid. From $RestoreDate."
 }
 
 Write-Host "Files will go here on the target device: $TargetDirectory"
@@ -161,6 +185,8 @@ function pushRestore($inputPaths, $SourceComputerGuid, $TargetComputerGuid, $Tar
         restorePath = $TargetDirectory
         pathSet = $jsonArray
         restoreFullPath = $true
+        timestamp = $EpochRestoreDate
+        showDeletedFiles = $showDeletedFiles
     }
 
     $PushRestoreJobBody = ConvertTo-Json $PrePushRestoreJobBody
