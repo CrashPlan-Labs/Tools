@@ -40,6 +40,6 @@ RestoreDeletedFiles
 
 Example restore commands:  
   
-pushrestore.ps1 -User restorePusher@example.com -Baseurl https://console.us2.crashplan.com -SourceComputerGuid 424242424242424242 -TargetComputerGuid 3141592653589793238 -inputFile .\pathsToRestore.txt -TargetDirectory "C:/RestoreTarget/" -RestoreDate 2025-12-31 -RestoreDeletedFiles
+./push_restore.ps1 -User restorePusher@example.com -Baseurl https://console.us2.crashplan.com -SourceComputerGuid 424242424242424242 -TargetComputerGuid 3141592653589793238 -inputFile .\pathsToRestore.txt -TargetDirectory "C:/RestoreTarget/" -RestoreDate 2025-12-31 -RestoreDeletedFiles
 
-pushrestore.ps1 -User restorePusher@example.com -Baseurl https://console.us2.crashplan.com -SourceComputerGuid 424242424242424242 -TargetComputerGuid 3141592653589793238  
+./push_restore.ps1 -User restorePusher@example.com -Baseurl https://console.us2.crashplan.com -SourceComputerGuid 424242424242424242 -TargetComputerGuid 3141592653589793238  
