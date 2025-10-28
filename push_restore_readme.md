@@ -1,6 +1,8 @@
 PushRestore.ps1  
 License: MIT  
-This script kicks off a push restore for CrashPlan using the `/api/PushRestoreJob` method. First it makes a call to set up a web restore session, and then performs the push restore. Before starting the restore it will prompt for comformation with information on both the source and target devices.  
+This script kicks off a push restore for CrashPlan using the `/api/PushRestoreJob` method. First it makes a call to set up a web restore session, and then performs the push restore. Before starting the restore it will prompt for comformation with information on both the source and target devices.
+
+This script prompts for user credentials separately, which are required. It also prompts for an archive password or custom key, but these are only required if the archive uses either of these security levels.
   
 Paramaters:  
   

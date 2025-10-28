@@ -31,6 +31,9 @@ $pushRestorePathsAtATime = 10000
 
 $credentials = Get-Credential -Credential $User
 
+$PrivatePassword = Read-Host -AsSecureString -Prompt "Archive key password. Press Enter to skip if not required"
+$CustomKey = Read-Host -AsSecureString -Prompt "Custom key. Press Enter to skip if not required"
+
 # Get an authorization token for the rest of the API calls, prompting for a two-factor code as needed. Works with PowerShell 5.1 and PowerShell Core
 $pair = "$($credentials.username):$($credentials.GetNetworkCredential().Password)"
 $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($pair))
@@ -163,9 +166,38 @@ function pushRestore($inputPaths, $SourceComputerGuid, $TargetComputerGuid, $Tar
 
     $DataKeyToken = (Invoke-RestMethod -Headers $headers -Uri "$BaseUrl/api/DataKeyToken" -Method Post -Body (ConvertTo-Json $DataKeyTokenPostValues) -ContentType application/json -WebSession $session -UserAgent $UserAgent).data.dataKeyToken
 
+    #only convert PrivatePassword and CustomKey to strings if they are not empty, otherwise PS errors out
+    #need to use older string conversion methods for pre-7.0 releases of PS
+    if ($PrivatePassword.Length -eq 0) {
+        $PrivatePasswordString = ""
+    } else {
+        if ($PSVersionTable.PSEdition -eq "Desktop") {
+            $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($PrivatePassword)
+            $PrivatePasswordString = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+            [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+        } else {
+            $PrivatePasswordString = $PrivatePassword | ConvertFrom-SecureString -AsPlainText
+        }
+    }
+
+    if ($CustomKey.Length -eq 0) {
+        $CustomKeyString = ""
+    } else {
+        if ($PSVersionTable.PSEdition -eq "Desktop") {
+            $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($CustomKey)
+            $CustomKeyString = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+            [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+        } else {
+            $CustomKeyString = $CustomKey | ConvertFrom-SecureString -AsPlainText
+        }
+
+    }
+
     $WebRestorePostValues = @{
         computerGuid = $SourceComputerGUID
         dataKeyToken = $DataKeyToken
+        privatePassword = $PrivatePasswordString
+        encryptionKey = $CustomKeyString
     }
     $body = ConvertTo-Json $WebRestorePostValues
 
@@ -186,7 +218,7 @@ function pushRestore($inputPaths, $SourceComputerGuid, $TargetComputerGuid, $Tar
         pathSet = $jsonArray
         restoreFullPath = $true
         timestamp = $EpochRestoreDate
-        showDeletedFiles = $showDeletedFiles
+        showDeletedFiles = $RestoreDeletedFiles
     }
 
     $PushRestoreJobBody = ConvertTo-Json $PrePushRestoreJobBody
