@@ -1,6 +1,6 @@
 (?i)^.*(\.class|-journal|\.Win386\.SWP|PM_HIBER\.BIN|SAVE2DSK\.BIN|SYSTEM\.DAT|TOSHIBER\.DAT|Thumbs\.db|USER\.DAT|\.bck|\.bkf|\.cdt|\.hdd|\.hds|\.icloud|\.ini|\.lrprev|\.manifest|\.mum|\.nib|\.nvram|\.ost|\.part|\.pvm|\.pvs|\.rbf|\.tibx?|\.tmp|\.upd|\.avhdx|\.vdi|\.vfd|\.vhd|\.vhdx|\.vmc|\.vmdk|\.vmem|\.vmsd|\.vmsn|\.vmss|\.vmtm|\.vmwarevm|\.vmx|\.vmxf|\.vsv|\.vud|\.xva|\.qcow2?|iso|pkg|raw|memory\.dmp|/Lightroom.*Previews\.lrdata|\.sparsebundle|\.sparseimage|/(cookies|permissions)\.sqlite(-.{3})?|\.crdownload)$
 (?i)^.*(/Apple.*/Installer Cache/|/Cache/|/Cookies/|/Music/Subscription/|/Plex Media Server/|/Temp/|/\.dropbox\.cache/|/\.git/|/iPod Photo Cache/|/node_modules/|/tmp/|/tsm_images/|\.Trash|\.hdd/|\.pvm/|\.cprestoretmp|\.nvm|\.npm|/\.gradle/).*
-linux:(?i)^/(usr/(?!($|local/$|local/crashplan/$|local/crashplan/print_job_data/.*))|opt/|etc/|dev/|home/[^/]+/\.config/google-chrome/|home/[^/]+/\.mozilla/|sbin/).*
+linux:(?i)^/(usr/|opt/|etc/|dev/|home/[^/]+/\.config/google-chrome/|home/[^/]+/\.mozilla/|sbin/).*
 linux:^/(cdrom/|dev/fd/|devices/|dvdrom/|initrd/|kernel/|lost\+found/|proc/|run/|selinux/|srv/|sys/|system/|var/(:?run|lock|spool|tmp|cache)/|proc/|.steam/).*
 linux:^/lib/modules/.*/volatile/\.mounted
 mac:(?i)^.*(/iTunes/Album Artwork/Cache/|/Network Trash Folder/|/Photos Library.*/Thumbnails/|/backups\.backupdb/|/iP.* Software Updates/|/iPhoto Library.*/Thumbnails/|/iPhoto Library/iPod Photo Cache|/migratedphotolibrary/Thumbnails/|\.imovielibrary/.*/Analysis Files/|\.imovielibrary/.*/Render Files/).*
