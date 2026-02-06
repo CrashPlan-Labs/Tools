@@ -34,7 +34,7 @@ TargetDirectory
 
 RestoreDate
 - **Mandatory:** False
-- Date to restore files from. If not provided today's date will be used. In a yyyy-MM-dd format forexample: 2025-12-31
+- Date to restore files from. If not provided today's date will be used. Can be any format Powershell recognizes. For example: 2025-12-31, 2025-12-31 1:37PM, 2025-12-31 13:37
 
 RestoreDeletedFiles
 - **Mandatory:** False
