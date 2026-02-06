@@ -11,7 +11,7 @@ param(
     [string]$InputFile,
     [Parameter(Mandatory=$false, HelpMessage="Target location that exists on disk for the files to be restored (C:/pushrestore/SourceComputerGuid is default if target is Windows, /pushrestore/SourceComputerGuid if macOS/Linux, and use / instead of \).")]
     [string]$TargetDirectory,
-    [Parameter(Mandatory=$false, HelpMessage="Date in a yyyy-mm-dd format to restore from. If none is provided the latest version will be restored.")]
+    [Parameter(Mandatory=$false, HelpMessage="Date to restore from. Format can be yyyy-MM-dd, yyyy-MM-dd hh:mm, or any other date format PowerShell recognizes. If none is provided the latest version will be restored.")]
     [string]$RestoreDate,
     [Parameter(Mandatory=$false, HelpMessage="Add paramater to restore deleted files. Disabled by default.")]
     [switch]$RestoreDeletedFiles
@@ -92,9 +92,8 @@ if (!($TargetDirectory)) {
 if (!($RestoreDate)) {
     $RestoreDate = (Get-Date).ToString("yyyy-MM-dd")
 } else{
-    $isValidDate = [DateTime]::TryParseExact($RestoreDate, 'yyyy-MM-dd', $null, [System.Globalization.DateTimeStyles]::None, [ref][datetime]::MinValue)
-    if (-not $isValidDate) {
-        Write-Host "The provided restore date '$RestoreDate' is not in the correct format (yyyy-MM-dd). Exiting."
+    if (!($RestoreDate -as [DateTime])) {
+        Write-Host "The provided restore date '$RestoreDate' is not in the correct format (yyyy-MM-dd or yyyy-MM-dd hh:mm). Exiting."
         exit
     }
 }
@@ -121,7 +120,7 @@ if ($InputFile) {
     Write-Host "Restoring $defaultPath."
 }
 
-Write-Host "Target device restore direcotry: $TargetDirectory"
+Write-Host "Target device restore directory: $TargetDirectory"
 
 $confirmation = Read-Host "If the above information is correct, enter Y/y to continue. Press any other key to exit."
 
@@ -218,7 +217,7 @@ function pushRestore($inputPaths, $SourceComputerGuid, $TargetComputerGuid, $Tar
 
 # Read all lines from the input file into the pushRestore array, and call the pushRestore function for each group of paths. If the input file does not exist, dynamically choose the path based on whether it's a Windows or macOS system. Assuming Windows by default.
 
-if (Test-Path -Path $InputFile) {
+if ($InputFile -and (Test-Path -Path $InputFile)) {
     Get-Content -Path $InputFile -ReadCount $pushRestorePathsAtATime | ForEach-Object { pushRestore $_ $SourceComputerGuid $TargetComputerGuid $TargetDirectory $ServerGUID $PrivatePassString $CustomKeyString }
 } else {
     Write-Host "Input file $InputFile does not exist. Restoring the full drive for $SourceComputerGuid."
