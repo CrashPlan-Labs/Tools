@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: ./script.sh <username> <base_url> <idp_uid>
+# Usage: ./refreshIDPMetadata.sh <username> <base_url> <idp_uid>
 
 if [ $# -lt 3 ]; then
     echo "Usage: $0 <username> <base_url> <idp_uid>"
