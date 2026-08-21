@@ -130,7 +130,27 @@ if (!($confirmation -ilike 'y')) {
 
 Write-Host "Starting restore of" $SourceComputer.data.name "to" $targetComputer.data.name
 
-$ServerGUID = $SourceComputer.data.backupUsage.serverGuid
+$BackupUsage = @($SourceComputer.data.backupUsage | Where-Object { $null -ne $_ })
+
+if ($BackupUsage.Count -eq 0) {
+    Write-Host "No backup usage found for $SourceComputerGuid. Cannot determine target Server GUID. Exiting."
+    exit
+}
+
+# Loop through destinations to find the cloud (SERVER) destination, ignoring LOCAL drives
+$ServerGUID = $null
+
+foreach ($destination in $BackupUsage) {
+    if ($destination.targetComputerType -eq "SERVER") {
+        $ServerGUID = $destination.serverGuid
+        break
+    }
+}
+
+if (!($ServerGUID) -or ($ServerGUID -eq "null")) {
+    Write-Host "No SERVER backup destination with a valid serverGuid found for $SourceComputerGuid. Exiting."
+    exit
+}
 
 $DataKeyTokenPostValues = @{
     computerGuid = $SourceComputerGuid
